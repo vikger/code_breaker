@@ -24,7 +24,7 @@ defmodule CodeBreaker.MixProject do
     [
       {:jason, "~> 1.2"},
       {:plug_cowboy, "~> 2.0"},
-      {:gs, path: "../gs"}
+      {:gs, git: "git@github.com:vikger/gs.git", branch: "main"}
     ]
   end
 end

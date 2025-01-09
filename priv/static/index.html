@@ -6,28 +6,29 @@
             crossorigin="anonymous"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <link rel="stylesheet" href="css/main.css"/>
   </head>
   <body>
     <table style="background-color: rgb(229,152,102)">
       <tr>
         <td colspan="6">
-          <p>Name: <input type="text" id="name"/></p>
+          <p>Name: <input type="text" id="name" class="name"/></p>
         </td>
       </tr>
       <tr>
-        <td><button id="black">&nbsp;</button></td>
-        <td><button id="green" style="background-color:green">&nbsp;</button></td>
-        <td><button id="blue" style="background-color:blue">&nbsp;</button></td>
-        <td><button id="red" style="background-color:red">&nbsp;</button></td>
-        <td><button id="white" style="background-color:white">&nbsp;</button></td>
-        <td><button id="yellow" style="background-color:yellow">&nbsp;</button></td>
+        <td><button id="black" class="guess_button"/></td>
+        <td><button id="green" class="guess_button"/></td>
+        <td><button id="blue" class="guess_button"/></td>
+        <td><button id="red" class="guess_button"/></td>
+        <td><button id="white" class="guess_button"/></td>
+        <td><button id="yellow" class="guess_button"/></td>
       </tr>
       <tr>
-        <td><div id="guess1" style="display: inline; border: 1px solid black">&nbsp;&nbsp;&nbsp;&nbsp;</div></td>
-        <td><div id="guess2" style="display: inline; border: 1px solid black">&nbsp;&nbsp;&nbsp;&nbsp;</div></td>
-        <td><div id="guess3" style="display: inline; border: 1px solid black">&nbsp;&nbsp;&nbsp;&nbsp;</div></td>
-        <td><div id="guess4" style="display: inline; border: 1px solid black">&nbsp;&nbsp;&nbsp;&nbsp;</div></td>
-        <td colspan="2"><button id="guess">Guess</button></td>
+        <td><div id="guess1" class="guess_field"/></td>
+        <td><div id="guess2" class="guess_field"/></td>
+        <td><div id="guess3" class="guess_field"/></td>
+        <td><div id="guess4" class="guess_field"/></td>
+        <td colspan="2"><button id="guess" class="make_guess">Guess</button></td>
       </tr>
     </table>
   </body>

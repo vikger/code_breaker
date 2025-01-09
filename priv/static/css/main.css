@@ -1,0 +1,33 @@
+.guess_field {
+    height: 20px;
+    width: 20px;
+    margin: auto;
+    border: 2px solid black;
+}
+
+.guess_button {
+    height: 25px;
+    width: 25px;
+    margin: auto;
+    padding: 2px;
+    norder: 2px solid black;
+}
+
+p {
+  font-family: Verdana;
+  font-size: 1.5rem;
+}
+
+.name {
+    font-family: Verdana;
+    font-size: 1.5rem;
+}
+
+td {
+    text-align: center;
+}
+
+.make_guess {
+    font-family: Verdana;
+    font-size: 1rem;
+}
