@@ -1,5 +1,5 @@
 defmodule CodeBreaker.Server do
-  use GenServer
+  use GenServer, restart: :transient
 
   require Logger
 
