@@ -45,7 +45,8 @@ defmodule CodeBreaker.Server do
       :gs.window(g,
         title: ~c"CodeBreaker",
         width: @window_width,
-        height: @window_height
+        height: @window_height,
+        configure: true
       )
 
     unit = get_unit(@window_width, @window_height)
@@ -95,6 +96,11 @@ defmodule CodeBreaker.Server do
         {:reply, :ok, state}
       end
     end
+  end
+
+  def handle_info({:gs, _object, :configure, _, [w, h | _]}, state) do
+    IO.inspect("configure #{w}, #{h}")
+    {:noreply, state}
   end
 
   def handle_info({:gs, window, :destroy, _, _}, %State{window: window} = state) do
