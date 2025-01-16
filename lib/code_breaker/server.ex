@@ -13,15 +13,10 @@ defmodule CodeBreaker.Server do
     "yellow" => {255, 255, 0}
   }
   @board_color {229, 152, 102}
-  @frame 10
-  @padding 10
-  @cell_size 40
-  @dot_size 20
-  @check_size 12
   @full_color {0, 128, 0}
   @half_color {200, 200, 20}
-  @canvas_width 2 * @frame + 8 * @padding + 5 * @cell_size
-  @canvas_height 2 * @frame + 10 * @cell_size + 11 * @padding
+  @window_width 600
+  @window_height 550
 
   defmodule State do
     defstruct new_game: nil,
@@ -31,7 +26,8 @@ defmodule CodeBreaker.Server do
               guesses: [],
               attempts: 0,
               status: :running,
-              result: nil
+              result: nil,
+              unit: nil
   end
 
   def start_link(_) do
@@ -48,17 +44,29 @@ defmodule CodeBreaker.Server do
     window =
       :gs.window(g,
         title: ~c"CodeBreaker",
-        width: 2 * @frame + @canvas_width + 250,
-        height: 2 * @frame + @canvas_height
+        width: @window_width,
+        height: @window_height
       )
 
-    canvas = create_canvas(window)
+    unit = get_unit(@window_width, @window_height)
+    canvas = draw_canvas(window, unit)
 
     button =
-      :gs.button(window, x: 2 * @frame + @canvas_width, y: @frame, label: {:text, ~c"New Game"})
+      :gs.button(window, x: 32 * unit, y: unit, label: {:text, ~c"New Game"})
+
+    result = :gs.label(window, x: 32 * unit, y: 20 * unit, label: {:text, ~c""})
 
     :gs.config(window, map: true)
-    {:ok, %State{new_game: button, window: window, canvas: canvas, solution: new_solution()}}
+
+    {:ok,
+     %State{
+       new_game: button,
+       window: window,
+       canvas: canvas,
+       solution: new_solution(),
+       result: result,
+       unit: unit
+     }}
   end
 
   def handle_call(_, _from, %State{status: :ended} = state) do
@@ -77,24 +85,12 @@ defmodule CodeBreaker.Server do
       |> update()
 
     if check == {4, 0} do
-      winner =
-        :gs.label(state.window,
-          x: 2 * @frame + @canvas_width,
-          y: @frame + 100,
-          label: {:text, to_charlist("Winner: " <> player)}
-        )
-
-      {:reply, :ok, %State{state | status: :ended, result: winner}}
+      :gs.config(state.result, label: {:text, to_charlist("Winner: " <> player)})
+      {:reply, :ok, %State{state | status: :ended}}
     else
       if state.attempts == 10 do
-        result =
-          :gs.label(state.window,
-            x: 2 * @frame + @canvas_width,
-            y: @frame + 100,
-            label: {:text, ~c"Game ended"}
-          )
-
-        {:reply, :ok, %State{state | status: :ended, result: result}}
+        :gs.config(state.result, label: {:text, ~c"Game ended"})
+        {:reply, :ok, %State{state | status: :ended}}
       else
         {:reply, :ok, state}
       end
@@ -108,10 +104,7 @@ defmodule CodeBreaker.Server do
 
   def handle_info({:gs, button, :click, _, _}, %State{new_game: button} = state) do
     Logger.info("CodeBreaker new game")
-
-    if state.result != nil do
-      :gs.destroy(state.result)
-    end
+    :gs.config(state.result, label: {:text, ~c""})
 
     state =
       %State{
@@ -119,30 +112,25 @@ defmodule CodeBreaker.Server do
         | guesses: [],
           solution: new_solution(),
           attempts: 0,
-          status: :running,
-          result: nil
+          status: :running
       }
       |> update()
 
     {:noreply, state}
   end
 
-  defp create_canvas(window) do
+  defp draw_canvas(window, unit) do
     canvas =
       :gs.canvas(window,
-        x: @frame,
-        y: @frame,
-        width: @canvas_width,
-        height: @canvas_height,
+        x: unit,
+        y: unit,
+        width: 30 * unit,
+        height: 53 * unit,
         bg: :white
       )
 
     :gs.rectangle(canvas,
-      coords: [
-        {@frame, @frame},
-        {@frame + @padding + 5 * (@cell_size + @padding) + 2 * @padding,
-         @frame + @padding + 10 * (@cell_size + @padding)}
-      ],
+      coords: [{unit, unit}, {29 * unit, 52 * unit}],
       fill: @board_color,
       fg: :black
     )
@@ -151,10 +139,8 @@ defmodule CodeBreaker.Server do
       for x <- 0..3 do
         :gs.rectangle(canvas,
           coords: [
-            {@frame + @padding + (@cell_size + @padding) * x,
-             @frame + @padding + (@cell_size + @padding) * y},
-            {@frame + @padding + @cell_size + (@cell_size + @padding) * x,
-             @frame + @padding + @cell_size + (@cell_size + @padding) * y}
+            {2 * unit + 5 * unit * x, 2 * unit + 5 * unit * y},
+            {6 * unit + 5 * unit * x, 6 * unit + 5 * unit * y}
           ],
           fill: @board_color,
           fg: :black
@@ -162,12 +148,7 @@ defmodule CodeBreaker.Server do
       end
 
       :gs.rectangle(canvas,
-        coords: [
-          {@frame + 4 * (@padding + @cell_size) + 3 * @padding,
-           @frame + @padding + (@cell_size + @padding) * y},
-          {@frame + 4 * (@padding + @cell_size) + 3 * @padding + @cell_size,
-           @frame + @padding + (@cell_size + @padding) * y + @cell_size}
-        ],
+        coords: [{24 * unit, 2 * unit + 5 * unit * y}, {28 * unit, 6 * unit + 5 * unit * y}],
         fill: @board_color,
         fg: :black
       )
@@ -176,48 +157,36 @@ defmodule CodeBreaker.Server do
     canvas
   end
 
-  defp update(%State{window: window, canvas: canvas, guesses: guesses} = state) do
+  defp update(%State{window: window, canvas: canvas, guesses: guesses, unit: unit} = state) do
     :gs.destroy(canvas)
-    canvas = create_canvas(window)
+    canvas = draw_canvas(window, unit)
 
     for {{dots, check}, y} <- Enum.with_index(guesses) do
       for {dot, x} <- Enum.with_index(dots) do
-        draw_dot(canvas, dot, x, y)
+        draw_dot(canvas, dot, x, y, unit)
       end
 
       for {check_y, check_x, color} <- check do
-        draw_check(canvas, y, check_x, check_y, color)
+        draw_check(canvas, y, check_x, check_y, color, unit)
       end
     end
 
     %State{state | canvas: canvas}
   end
 
-  defp draw_dot(canvas, dot, x, y) do
-    x1 = @frame + @padding + x * (@cell_size + @padding) + round(@cell_size / 2 - @dot_size / 2)
-    x2 = @frame + @padding + x * (@cell_size + @padding) + round(@cell_size / 2 + @dot_size / 2)
-    y1 = @frame + @padding + y * (@cell_size + @padding) + round(@cell_size / 2 - @dot_size / 2)
-    y2 = @frame + @padding + y * (@cell_size + @padding) + round(@cell_size / 2 + @dot_size / 2)
+  defp draw_dot(canvas, dot, x, y, unit) do
+    x1 = 3 * unit + 5 * x * unit
+    x2 = 5 * unit + 5 * x * unit
+    y1 = 3 * unit + 5 * y * unit
+    y2 = 5 * unit + 5 * y * unit
     :gs.oval(canvas, coords: [{x1, y1}, {x2, y2}], fg: :black, fill: @color_map[dot])
   end
 
-  defp draw_check(canvas, col, x, y, color) do
-    x1 =
-      @frame + @padding + 4 * (@cell_size + @padding) + 2 * @padding +
-        round(@cell_size / 3 * x - @check_size / 2)
-
-    x2 =
-      @frame + @padding + 4 * (@cell_size + @padding) + 2 * @padding +
-        round(@cell_size / 3 * x + @check_size / 2)
-
-    y1 =
-      @frame + @padding + col * (@cell_size + @padding) +
-        round(@cell_size / 3 * y - @check_size / 2)
-
-    y2 =
-      @frame + @padding + col * (@cell_size + @padding) +
-        round(@cell_size / 3 * y + @check_size / 2)
-
+  defp draw_check(canvas, col, x, y, color, unit) do
+    x1 = 24 * unit + round((3 * x - 2) * 4 * unit / 7)
+    x2 = 24 * unit + round(3 * x * 4 * unit / 7)
+    y1 = 2 * unit + 5 * col * unit + round((3 * y - 2) * 4 * unit / 7)
+    y2 = 2 * unit + 5 * col * unit + round(3 * y * 4 * unit / 7)
     :gs.oval(canvas, coords: [{x1, y1}, {x2, y2}], fg: :black, fill: color)
   end
 
@@ -249,5 +218,9 @@ defmodule CodeBreaker.Server do
 
     Enum.map(full_fields, fn {y, x} -> {y, x, @full_color} end) ++
       Enum.map(half_fields, fn {y, x} -> {y, x, @half_color} end)
+  end
+
+  defp get_unit(w, h) do
+    min(round(w / 2 / 30), round(h / 55))
   end
 end
